@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"net/smtp"
 
-	"github.com/diogoaguiar/mailer/internal/mailer/messages"
+	"github.com/diogoaguiar/mailer/pkg/mailer/messages"
 )
 
 // SMTPSender is a sender that sends emails using SMTP.

@@ -4,11 +4,11 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/diogoaguiar/mailer/internal/mailer"
-	"github.com/diogoaguiar/mailer/internal/mailer/loggers"
-	"github.com/diogoaguiar/mailer/internal/mailer/messages"
-	"github.com/diogoaguiar/mailer/internal/mailer/senders"
-	"github.com/diogoaguiar/mailer/internal/mailer/strategies"
+	"github.com/diogoaguiar/mailer/pkg/mailer"
+	"github.com/diogoaguiar/mailer/pkg/mailer/loggers"
+	"github.com/diogoaguiar/mailer/pkg/mailer/messages"
+	"github.com/diogoaguiar/mailer/pkg/mailer/senders"
+	"github.com/diogoaguiar/mailer/pkg/mailer/strategies"
 
 	"github.com/joho/godotenv"
 )

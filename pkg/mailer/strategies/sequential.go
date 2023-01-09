@@ -3,7 +3,7 @@ package strategies
 import (
 	"time"
 
-	"github.com/diogoaguiar/mailer/internal/mailer"
+	"github.com/diogoaguiar/mailer/pkg/mailer"
 )
 
 // Sequential is a strategy that sends emails sequentially.
