@@ -1,34 +1,40 @@
 package mailer
 
-type Sender interface {
-	SendTo(recipient string) error
+import (
+	"github.com/diogoaguiar/mailer/pkg/mailer/loggers"
+	"github.com/diogoaguiar/mailer/pkg/mailer/messages"
+	"github.com/diogoaguiar/mailer/pkg/mailer/senders"
+	"github.com/diogoaguiar/mailer/pkg/mailer/strategies"
+)
+
+// MailerConfig is the configuration for the mailer.
+type MailerConfig struct {
+	Message    messages.Message
+	Sender     senders.Sender
+	Strategy   strategies.Strategy
+	Recipients []string
+	Logger     loggers.Logger
 }
 
-type Strategy interface {
-	Send(sender *Sender, recipients []string) error
-}
-
-type Logger interface {
-	Success(recipient string)
-	Error(err error)
+// New
+func New(config *MailerConfig) (*Mailer, error) {
+	return &Mailer{
+		message:    config.Message,
+		sender:     config.Sender,
+		strategy:   config.Strategy,
+		logger:     config.Logger,
+		recipients: config.Recipients,
+	}, nil
 }
 
 type Mailer struct {
-	sender     Sender
-	strategy   Strategy
-	logger     Logger
+	message    messages.Message
+	sender     senders.Sender
+	strategy   strategies.Strategy
+	logger     loggers.Logger
 	recipients []string
 }
 
-func NewMailer(sender Sender, strategy Strategy, logger Logger, recipients []string) *Mailer {
-	return &Mailer{
-		sender:     sender,
-		strategy:   strategy,
-		logger:     logger,
-		recipients: recipients,
-	}
-}
-
 func (m *Mailer) Send() error {
-	return m.strategy.Send(&m.sender, m.recipients)
+	return m.strategy.Send(m.message.Subject(), m.message.Body(), m.recipients)
 }

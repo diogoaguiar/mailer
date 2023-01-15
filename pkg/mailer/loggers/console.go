@@ -9,11 +9,6 @@ import (
 type ConsoleLogger struct {
 }
 
-// NewConsoleLogger creates a new ConsoleLogger.
-func NewConsoleLogger() *ConsoleLogger {
-	return &ConsoleLogger{}
-}
-
 // Success prints a success message to the console.
 func (l ConsoleLogger) Success(recipient string) {
 	fmt.Println("Email sent to " + recipient)

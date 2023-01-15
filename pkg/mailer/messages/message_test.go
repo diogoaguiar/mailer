@@ -7,27 +7,24 @@ import (
 )
 
 // TestMessage tests the Message type.
-func TestMessage(t *testing.T) {
-	message := Message{
-		Subject: "Test",
-		Body:    "This is a test.",
-	}
+func TestSimpleMessage(t *testing.T) {
+	message := SimpleMessage{}
 
-	assert.IsType(t, Message{}, message)
+	assert.Implements(t, (*Message)(nil), message)
 }
 
 // TestNewMessage tests the NewMessage function.
 func TestNewMessage(t *testing.T) {
 	message := NewMessage("Test", "This is a test.")
 
-	assert.IsType(t, &Message{}, message)
+	assert.IsType(t, SimpleMessage{}, message)
 	assert.Equal(t, "Test", message.Subject)
 	assert.Equal(t, "This is a test.", message.Body)
 }
 
 // TestMessageFromFile tests the Message type.
 func TestMessageFromFile(t *testing.T) {
-	message := Message{}
+	message := SimpleMessage{}
 
 	err := message.BodyFromFile("test/message.txt")
 	assert.Nil(t, err)

@@ -3,8 +3,6 @@ package senders
 import (
 	"fmt"
 	"net/smtp"
-
-	"github.com/diogoaguiar/mailer/pkg/mailer/messages"
 )
 
 // SMTPSender is a sender that sends emails using SMTP.
@@ -13,26 +11,14 @@ type SMTPSender struct {
 	Port     int
 	Username string
 	Password string
-	Message  *messages.Message
-}
-
-// NewSMTPSender creates a new SMTPSender.
-func NewSMTPSender(host string, port int, username string, password string, message *messages.Message) *SMTPSender {
-	return &SMTPSender{
-		Host:     host,
-		Port:     port,
-		Username: username,
-		Password: password,
-		Message:  message,
-	}
 }
 
 // SendTo sends an email to the specified recipient.
-func (s *SMTPSender) SendTo(recipient string) error {
+func (s *SMTPSender) SendTo(subject string, body string, recipient string) error {
 	message := "To: " + recipient + "\r\n" +
-		"Subject: " + s.Message.Subject + "\r\n" +
+		"Subject: " + subject + "\r\n" +
 		"\r\n" +
-		s.Message.Body + "\r\n"
+		body + "\r\n"
 
 	addr := fmt.Sprintf("%s:%d", s.Host, s.Port)
 

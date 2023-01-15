@@ -1,50 +1,80 @@
 package main
 
 import (
-	"github.com/spf13/cobra"
+	"fmt"
+	"os"
+
+	"github.com/diogoaguiar/mailer/internal/cli"
+	"github.com/diogoaguiar/mailer/pkg/mailer"
+	"github.com/diogoaguiar/mailer/pkg/mailer/configs"
+	"github.com/diogoaguiar/mailer/pkg/mailer/loggers"
+	"github.com/diogoaguiar/mailer/pkg/mailer/messages"
+	"github.com/diogoaguiar/mailer/pkg/mailer/senders"
+	"github.com/diogoaguiar/mailer/pkg/mailer/strategies"
 )
-
-var (
-	strategy string
-	sender   string
-	file     bool
-	to       []string
-	subject  string
-	body     string
-)
-
-var rootCmd = &cobra.Command{
-	Use:   "mailer",
-	Short: "A simple email sender",
-	Long:  "A simple email sender",
-}
-
-func init() {
-	rootCmd.PersistentFlags().StringVarP(&strategy, "strategy", "s", "sequential", "Strategy to use")
-	rootCmd.PersistentFlags().StringVarP(&sender, "sender", "S", "smtp", "Sender service to use")
-	rootCmd.PersistentFlags().BoolVarP(&file, "file", "f", false, "Read email body from file")
-	rootCmd.PersistentFlags().StringArrayVarP(&to, "to", "t", []string{}, "Recipient email")
-
-	rootCmd.Args = cobra.ExactArgs(2)
-	rootCmd.Run = func(cmd *cobra.Command, args []string) {
-		subject = args[0]
-		body = args[1]
-	}
-}
 
 func main() {
-	if err := rootCmd.Execute(); err != nil {
-		panic(err)
+	cli, err := cli.Parse()
+	if err != nil {
+		fmt.Printf("Something went wrong while parsing the arguments: %s", err)
+		os.Exit(1)
 	}
 
-	// print all arguments with a label
-	println("strategy:", strategy)
-	println("sender:", sender)
-	println("file:", file)
-	// print all recipients, enumerated
-	for i, recipient := range to {
-		println("recipient", i, ":", recipient)
+	config := configs.Load()
+
+	logger := &loggers.ConsoleLogger{}
+
+	message := messages.NewMessage(cli.Subject, cli.Body)
+
+	sender := getSender(cli.Sender, config)
+
+	strategy := getStrategy(cli.Strategy, config, logger, sender)
+
+	mailerConfig := &mailer.MailerConfig{
+		Message:    message,
+		Sender:     sender,
+		Strategy:   strategy,
+		Recipients: cli.Recipients,
+		Logger:     logger,
 	}
-	println("subject:", subject)
-	println("body:", body)
+
+	mailer, err := mailer.New(mailerConfig)
+	if err != nil {
+		fmt.Printf("Something went wrong while creating the mailer: %s", err)
+		os.Exit(1)
+	}
+
+	if err := mailer.Send(); err != nil {
+		fmt.Printf("Something went wrong while sending the emails: %s", err)
+		os.Exit(1)
+	}
+
+	fmt.Println("Emails sent successfully!")
+}
+
+func getSender(sender string, config *configs.Config) senders.Sender {
+	switch sender {
+	case "smtp":
+		return &senders.SMTPSender{
+			Host:     config.Host,
+			Port:     config.Port,
+			Username: config.Username,
+			Password: config.Password,
+		}
+	}
+
+	return nil
+}
+
+func getStrategy(strategy string, config *configs.Config, logger loggers.Logger, sender senders.Sender) strategies.Strategy {
+	switch strategy {
+	case "sequential":
+		return &strategies.Sequential{
+			Interval: config.Interval,
+			Logger:   logger,
+			SendTo:   sender.SendTo,
+		}
+	}
+
+	return nil
 }
