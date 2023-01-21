@@ -2,6 +2,8 @@ package cli
 
 import (
 	"fmt"
+	"os"
+	"strings"
 
 	"github.com/spf13/cobra"
 )
@@ -9,7 +11,6 @@ import (
 type Cli struct {
 	Strategy   string
 	Sender     string
-	File       bool
 	Recipients []string
 	Subject    string
 	Body       string
@@ -19,13 +20,11 @@ func (c *Cli) String() string {
 	return fmt.Sprintf(
 		"strategy: %s,\n"+
 			"sender: %s,\n"+
-			"file: %t,\n"+
 			"to: %s,\n"+
 			"subject: %s,\n"+
 			"body: %s",
 		c.Strategy,
 		c.Sender,
-		c.File,
 		c.Recipients,
 		c.Subject,
 		c.Body,
@@ -35,22 +34,26 @@ func (c *Cli) String() string {
 var (
 	cli     = &Cli{}
 	rootCmd = &cobra.Command{
-		Use:   "mailer [flags] subject body",
+		Use:   "mailer",
 		Short: "A simple email sender",
 	}
+	body       string
+	recipients string
 )
 
 func init() {
-	rootCmd.Flags().StringVarP(&cli.Strategy, "strategy", "s", "sequential", "Strategy to use")
-	rootCmd.Flags().StringVarP(&cli.Sender, "sender", "S", "smtp", "Sender service to use")
-	rootCmd.Flags().BoolVarP(&cli.File, "file", "f", false, "Read email body from file")
-	rootCmd.Flags().StringArrayVarP(&cli.Recipients, "to", "t", []string{}, "Recipient email")
+	rootCmd.Flags().StringVarP(&cli.Subject, "subject", "s", "", "Subject of the email")
+	rootCmd.Flags().StringVarP(&body, "body", "b", "", "Body of the email")
+	rootCmd.Flags().StringVarP(&recipients, "to", "t", "", "Recipient email")
+	rootCmd.Flags().StringVarP(&cli.Strategy, "strategy", "", "sequential", "Strategy to use")
+	rootCmd.Flags().StringVarP(&cli.Sender, "sender", "", "smtp", "Sender service to use")
+	rootCmd.MarkFlagRequired("subject")
+	rootCmd.MarkFlagRequired("body")
 	rootCmd.MarkFlagRequired("to")
 
-	rootCmd.Args = cobra.ExactArgs(2)
 	rootCmd.Run = func(cmd *cobra.Command, args []string) {
-		cli.Subject = args[0]
-		cli.Body = args[1]
+		cli.Body = parseBody(body)
+		cli.Recipients = parseRecipients(recipients)
 	}
 }
 
@@ -60,4 +63,51 @@ func Parse() (*Cli, error) {
 	}
 
 	return cli, nil
+}
+
+func parseBody(body string) string {
+	if isAFile(body) {
+		bytes, err := os.ReadFile(body)
+		if err != nil {
+			panic(err)
+		}
+
+		body = string(bytes)
+	}
+
+	return body
+}
+
+func parseRecipients(recipients string) []string {
+	if isAFile(recipients) {
+		bytes, err := os.ReadFile(recipients)
+		if err != nil {
+			panic(err)
+		}
+
+		recipients = string(bytes)
+	}
+
+	return splitRecipients(recipients)
+}
+
+func splitRecipients(recipients string) []string {
+	recipients = strings.Map(func(r rune) rune {
+		switch r {
+		case ',', ';', '\n', '\t':
+			r = ' '
+		}
+
+		return r
+	}, recipients)
+
+	return strings.Fields(recipients)
+}
+
+func isAFile(path string) bool {
+	if _, err := os.Stat(path); os.IsNotExist(err) {
+		return false
+	}
+
+	return true
 }

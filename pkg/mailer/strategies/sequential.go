@@ -20,6 +20,7 @@ func (s *Sequential) Send(subject string, body string, recipients []string) erro
 
 	for _, recipient := range recipients {
 		wg.Add(1)
+		s.Logger.Sending(recipient)
 
 		go func(subject string, body string, recipient string) {
 			defer wg.Done()
@@ -32,7 +33,7 @@ func (s *Sequential) Send(subject string, body string, recipients []string) erro
 			s.Logger.Success(recipient)
 		}(subject, body, recipient)
 
-		time.Sleep(time.Duration(s.Interval) * time.Millisecond)
+		time.Sleep(time.Duration(s.Interval) * time.Second)
 	}
 
 	wg.Wait()

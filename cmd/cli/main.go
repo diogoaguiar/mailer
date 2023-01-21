@@ -16,7 +16,7 @@ import (
 func main() {
 	cli, err := cli.Parse()
 	if err != nil {
-		fmt.Printf("Something went wrong while parsing the arguments: %s", err)
+		fmt.Println("Something went wrong while parsing the arguments:", err)
 		os.Exit(1)
 	}
 
@@ -40,16 +40,14 @@ func main() {
 
 	mailer, err := mailer.New(mailerConfig)
 	if err != nil {
-		fmt.Printf("Something went wrong while creating the mailer: %s", err)
+		fmt.Println("Something went wrong while creating the mailer:", err)
 		os.Exit(1)
 	}
 
 	if err := mailer.Send(); err != nil {
-		fmt.Printf("Something went wrong while sending the emails: %s", err)
+		fmt.Println("Something went wrong while sending the emails:", err)
 		os.Exit(1)
 	}
-
-	fmt.Println("Emails sent successfully!")
 }
 
 func getSender(sender string, config *configs.Config) senders.Sender {

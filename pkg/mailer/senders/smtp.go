@@ -16,9 +16,12 @@ type SMTPSender struct {
 // SendTo sends an email to the specified recipient.
 func (s *SMTPSender) SendTo(subject string, body string, recipient string) error {
 	message := "To: " + recipient + "\r\n" +
+		"MIME-version: 1.0;\r\n" +
+		"Content-Type: text/html; charset=\"UTF-8\";\r\n" +
 		"Subject: " + subject + "\r\n" +
 		"\r\n" +
-		body + "\r\n"
+		body +
+		"\r\n"
 
 	addr := fmt.Sprintf("%s:%d", s.Host, s.Port)
 

@@ -9,12 +9,14 @@ import (
 type ConsoleLogger struct {
 }
 
-// Success prints a success message to the console.
+func (l ConsoleLogger) Sending(recipient string) {
+	fmt.Println("Sending email to " + recipient)
+}
+
 func (l ConsoleLogger) Success(recipient string) {
 	fmt.Println("Email sent to " + recipient)
 }
 
-// Error prints an error message to the console.
 func (l ConsoleLogger) Error(err error) {
 	fmt.Fprintln(os.Stderr, err)
 }
