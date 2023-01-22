@@ -2,6 +2,8 @@ package cli
 
 import (
 	"fmt"
+	"log"
+	"net/mail"
 	"os"
 	"strings"
 
@@ -11,7 +13,7 @@ import (
 type Cli struct {
 	Strategy   string
 	Sender     string
-	Recipients []string
+	Recipients []*mail.Address
 	Subject    string
 	Body       string
 }
@@ -44,7 +46,7 @@ var (
 func init() {
 	rootCmd.Flags().StringVarP(&cli.Subject, "subject", "s", "", "Subject of the email")
 	rootCmd.Flags().StringVarP(&body, "body", "b", "", "Body of the email")
-	rootCmd.Flags().StringVarP(&recipients, "to", "t", "", "Recipient email")
+	rootCmd.Flags().StringVarP(&recipients, "to", "t", "", "Recipient emails")
 	rootCmd.Flags().StringVarP(&cli.Strategy, "strategy", "", "sequential", "Strategy to use")
 	rootCmd.Flags().StringVarP(&cli.Sender, "sender", "", "smtp", "Sender service to use")
 	rootCmd.MarkFlagRequired("subject")
@@ -69,7 +71,7 @@ func parseBody(body string) string {
 	if isAFile(body) {
 		bytes, err := os.ReadFile(body)
 		if err != nil {
-			panic(err)
+			log.Fatalln("failed to read body file: ", err)
 		}
 
 		body = string(bytes)
@@ -78,30 +80,31 @@ func parseBody(body string) string {
 	return body
 }
 
-func parseRecipients(recipients string) []string {
+func parseRecipients(recipients string) []*mail.Address {
 	if isAFile(recipients) {
 		bytes, err := os.ReadFile(recipients)
 		if err != nil {
-			panic(err)
+			log.Fatalln("failed to read recipients file: ", err)
 		}
 
 		recipients = string(bytes)
 	}
 
-	return splitRecipients(recipients)
-}
-
-func splitRecipients(recipients string) []string {
 	recipients = strings.Map(func(r rune) rune {
 		switch r {
-		case ',', ';', '\n', '\t':
-			r = ' '
+		case ';', '\n':
+			r = ','
 		}
 
 		return r
 	}, recipients)
 
-	return strings.Fields(recipients)
+	addresses, err := mail.ParseAddressList(recipients)
+	if err != nil {
+		log.Fatalln("failed to parse recipients: ", err)
+	}
+
+	return addresses
 }
 
 func isAFile(path string) bool {

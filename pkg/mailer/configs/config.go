@@ -1,14 +1,14 @@
 package configs
 
 import (
-	"fmt"
+	"log"
 	"os"
 	"strconv"
 
 	"github.com/joho/godotenv"
 )
 
-const configFile = "config/.env"
+var possibleConfigs = []string{".env", "config/.env"}
 
 // Config is the configuration for the mailer
 type Config struct {
@@ -22,6 +22,7 @@ type Config struct {
 }
 
 type value struct {
+	key string
 	val string
 }
 
@@ -32,14 +33,14 @@ func (v *value) string() string {
 func (v *value) int() int {
 	intValue, err := strconv.Atoi(v.val)
 	if err != nil {
-		panic(err)
+		log.Fatalf("could not parse int value of \"%s\": %s\n", v.key, err)
 	}
 	return intValue
 }
 
 func (v *value) required() *value {
 	if v.val == "" {
-		panic(fmt.Errorf("configuration missing: %s", v.val))
+		log.Fatalf("missing required environment variable: %s\n", v.key)
 	}
 	return v
 }
@@ -52,30 +53,40 @@ func (v *value) optional(defaultValue string) *value {
 }
 
 func valueOf(key string) *value {
-	return &value{val: os.Getenv(key)}
+	return &value{key: key, val: os.Getenv(key)}
 }
 
 // Load loads the configuration from the .env file and the environment
 func Load() *Config {
-	godotenv.Load(configFile)
+	godotenv.Load(locateConfig())
 
 	c := &Config{}
 
 	c.Strategy = valueOf("STRATEGY").optional("sequential").string()
-
 	c.Interval = valueOf("SEND_INTERVAL").optional("5").int()
-
 	c.Sender = valueOf("SENDER").optional("smtp").string()
 
-	if c.Sender == "smtp" {
+	switch c.Sender {
+	case "smtp":
 		c.Host = valueOf("SMTP_HOST").required().string()
-
 		c.Port = valueOf("SMTP_PORT").required().int()
-
 		c.Username = valueOf("SMTP_USERNAME").required().string()
-
 		c.Password = valueOf("SMTP_PASSWORD").required().string()
+	default:
+		log.Fatalln("invalid sender:", c.Sender)
 	}
 
 	return c
+}
+
+func locateConfig() string {
+	for _, config := range possibleConfigs {
+		if _, err := os.Stat(config); os.IsNotExist(err) {
+			continue
+		}
+
+		return config
+	}
+
+	return ""
 }

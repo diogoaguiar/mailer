@@ -1,5 +1,7 @@
 package senders
 
+import "net/mail"
+
 type Sender interface {
-	SendTo(subject string, body string, recipient string) error
+	SendTo(subject string, body string, recipient *mail.Address) error
 }

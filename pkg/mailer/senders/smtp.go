@@ -2,6 +2,7 @@ package senders
 
 import (
 	"fmt"
+	"net/mail"
 	"net/smtp"
 )
 
@@ -14,8 +15,8 @@ type SMTPSender struct {
 }
 
 // SendTo sends an email to the specified recipient.
-func (s *SMTPSender) SendTo(subject string, body string, recipient string) error {
-	message := "To: " + recipient + "\r\n" +
+func (s *SMTPSender) SendTo(subject string, body string, recipient *mail.Address) error {
+	message := "To: " + recipient.String() + "\r\n" +
 		"MIME-version: 1.0;\r\n" +
 		"Content-Type: text/html; charset=\"UTF-8\";\r\n" +
 		"Subject: " + subject + "\r\n" +
@@ -26,7 +27,7 @@ func (s *SMTPSender) SendTo(subject string, body string, recipient string) error
 	addr := fmt.Sprintf("%s:%d", s.Host, s.Port)
 
 	auth := smtp.PlainAuth("", s.Username, s.Password, s.Host)
-	err := smtp.SendMail(addr, auth, s.Username, []string{recipient}, []byte(message))
+	err := smtp.SendMail(addr, auth, s.Username, []string{recipient.Address}, []byte(message))
 	if err != nil {
 		return err
 	}

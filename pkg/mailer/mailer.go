@@ -1,7 +1,8 @@
 package mailer
 
 import (
-	"github.com/diogoaguiar/mailer/pkg/mailer/loggers"
+	"net/mail"
+
 	"github.com/diogoaguiar/mailer/pkg/mailer/messages"
 	"github.com/diogoaguiar/mailer/pkg/mailer/senders"
 	"github.com/diogoaguiar/mailer/pkg/mailer/strategies"
@@ -12,8 +13,7 @@ type MailerConfig struct {
 	Message    messages.Message
 	Sender     senders.Sender
 	Strategy   strategies.Strategy
-	Recipients []string
-	Logger     loggers.Logger
+	Recipients []*mail.Address
 }
 
 // New
@@ -22,7 +22,6 @@ func New(config *MailerConfig) (*Mailer, error) {
 		message:    config.Message,
 		sender:     config.Sender,
 		strategy:   config.Strategy,
-		logger:     config.Logger,
 		recipients: config.Recipients,
 	}, nil
 }
@@ -31,8 +30,7 @@ type Mailer struct {
 	message    messages.Message
 	sender     senders.Sender
 	strategy   strategies.Strategy
-	logger     loggers.Logger
-	recipients []string
+	recipients []*mail.Address
 }
 
 func (m *Mailer) Send() error {

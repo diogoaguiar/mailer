@@ -7,7 +7,6 @@ import (
 	"github.com/diogoaguiar/mailer/internal/cli"
 	"github.com/diogoaguiar/mailer/pkg/mailer"
 	"github.com/diogoaguiar/mailer/pkg/mailer/configs"
-	"github.com/diogoaguiar/mailer/pkg/mailer/loggers"
 	"github.com/diogoaguiar/mailer/pkg/mailer/messages"
 	"github.com/diogoaguiar/mailer/pkg/mailer/senders"
 	"github.com/diogoaguiar/mailer/pkg/mailer/strategies"
@@ -16,26 +15,22 @@ import (
 func main() {
 	cli, err := cli.Parse()
 	if err != nil {
-		fmt.Println("Something went wrong while parsing the arguments:", err)
-		os.Exit(1)
+		return
 	}
 
 	config := configs.Load()
-
-	logger := &loggers.ConsoleLogger{}
 
 	message := messages.NewMessage(cli.Subject, cli.Body)
 
 	sender := getSender(cli.Sender, config)
 
-	strategy := getStrategy(cli.Strategy, config, logger, sender)
+	strategy := getStrategy(cli.Strategy, config, sender)
 
 	mailerConfig := &mailer.MailerConfig{
 		Message:    message,
 		Sender:     sender,
 		Strategy:   strategy,
 		Recipients: cli.Recipients,
-		Logger:     logger,
 	}
 
 	mailer, err := mailer.New(mailerConfig)
@@ -46,8 +41,10 @@ func main() {
 
 	if err := mailer.Send(); err != nil {
 		fmt.Println("Something went wrong while sending the emails:", err)
-		os.Exit(1)
+		os.Exit(2)
 	}
+
+	fmt.Println("Emails sent successfully!")
 }
 
 func getSender(sender string, config *configs.Config) senders.Sender {
@@ -64,12 +61,11 @@ func getSender(sender string, config *configs.Config) senders.Sender {
 	return nil
 }
 
-func getStrategy(strategy string, config *configs.Config, logger loggers.Logger, sender senders.Sender) strategies.Strategy {
+func getStrategy(strategy string, config *configs.Config, sender senders.Sender) strategies.Strategy {
 	switch strategy {
 	case "sequential":
 		return &strategies.Sequential{
 			Interval: config.Interval,
-			Logger:   logger,
 			SendTo:   sender.SendTo,
 		}
 	}
